@@ -1,22 +1,35 @@
 import { Injectable } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SignalrService {
-  connection: signalR.HubConnection;
+  private connection: signalR.HubConnection;
+  private progressRate = new BehaviorSubject<number>(0);
 
-  constructor() { }
+  constructor() {
+    this.connection = new signalR.HubConnectionBuilder()
+      .withUrl('http://localhost:63812/hubs/notification') // the SignalR server url
+      .build();
+    this.registerOnServerEvents();
+  }
 
-  initiateSignalrConnection() {
-      this.connection = new signalR.HubConnectionBuilder()
-        .withUrl('http://localhost:63812/hubs/notification') // the SignalR server url
-        .build();
+  private registerOnServerEvents() {
+    this.connection.on('updateArtice', (data: HubTranferObject) => {
+      this.progressRate.next(<number>data.transferData);
+    });
   }
 
   public open() {
+
     return new Promise((resolve, reject) => {
+      if (this.connection.state === signalR.HubConnectionState.Connected) resolve(null);
+      if (!this.connection)
+        this.connection = new signalR.HubConnectionBuilder()
+          .withUrl('http://localhost:63812/hubs/notification') // the SignalR server url
+          .build();
       this.connection
         .start()
         .then((value) => {
@@ -30,18 +43,16 @@ export class SignalrService {
     })
   }
 
-  public close() {
-    return new Promise((resolve, reject) => {
-      this.connection
-        .stop()
-        .then((value) => {
-          console.log(`SignalR connection close success! connectionId: ${this.connection.connectionId} `);
-          resolve(value);
-        })
-        .catch((error) => {
-          console.log(`SignalR connection close error: ${error}`);
-          reject();
-        });
-    });
+  public UpdateProgressRate() {
+    // this.connection
+    //   .invoke('updateArtice')
+    //   .catch(err => {
+    //     console.error('SignalR updateArtice Method error:', err);
+    //   })
+    return this.progressRate;
   }
+}
+
+export class HubTranferObject {
+  public transferData: any;
 }

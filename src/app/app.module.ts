@@ -8,7 +8,9 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { SignalrService } from './signalr.service';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient, HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { CInterceptor } from 'src/Intercepters/cInterceptor';
+import {ProgressBarModule} from 'primeng/progressbar';
 
 @NgModule({
   declarations: [
@@ -21,14 +23,14 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
     HttpClientModule,
   //  MatFormFieldModule,
     MatInputModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    ProgressBarModule
   ],
   providers: [
     SignalrService,
     {
-      provide: APP_INITIALIZER,
-      useFactory: (signalrService: SignalrService) => () => signalrService.initiateSignalrConnection(),
-      deps: [SignalrService],
+      provide: HTTP_INTERCEPTORS,
+      useClass: CInterceptor,
       multi: true,
     }
   ],
